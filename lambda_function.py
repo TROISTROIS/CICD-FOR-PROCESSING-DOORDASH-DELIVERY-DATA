@@ -4,7 +4,7 @@ import boto3
 
 s3_client = boto3.client('s3')
 sns_client = boto3.client('sns')
-target_bucket_arn = "arn:aws:s3:::doordash-filtered-target-bucket"
+target_bucket = "doordash-filtered-target-bucket"
 sns_arn_filtered = "arn:aws:sns:eu-north-1:590183810146:doordash-filtering"
 sns_arn_landing = "arn:aws:sns:eu-north-1:590183810146:doordash-landing"
 
@@ -51,7 +51,7 @@ def lambda_handler(event,context):
             s3_key_filtered = f'filtered_data_delivered.json'
 
             # Upload filtered data to S3
-            s3_client.put_object(Bucket=target_bucket_arn, Key=s3_key_filtered, Body=filtered_data_json)
+            s3_client.put_object(Bucket=target_bucket, Key=s3_key_filtered, Body=filtered_data_json)
 
             # Get the count of records for the current order status
             count = len(filtered_data)
