@@ -75,5 +75,6 @@ def lambda_handler(event,context):
                 message = f"Failed to upload {status} orders to S3 Bucket!!"
                 notification = sns_client.publish(Subject="FAILED - Daily Data Upload", TargetArn=sns_arn_filtered,
                                               Message=message, MessageStructure='text')
+                
     except Exception as err:
         print(err)
