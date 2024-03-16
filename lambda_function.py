@@ -44,37 +44,29 @@ def lambda_handler(event,context):
                                               MessageStructure='text')
         try:
 
-            # Filter the data
-            # 1. Find unique order status values
-            order_statuses = set(df['status'])
+            filtered_data = df[df['status'] == 'delivered']
 
-            # 2.Filter and upload data for each unique order status
-            for status in order_statuses:
-                filtered_data = df[df['status'] == status]
+            # 2. Convert filtered data back to JSON
+            filtered_data_json = filtered_data.to_json(orient='records')
+            s3_key_filtered = f'filtered_data_delivered.json'
 
-                # 2. Convert filtered data back to JSON
-                filtered_data_json = filtered_data.to_json(orient='records')
-                s3_key_filtered = f'filtered_data_{status}.json'
+            # Upload filtered data to S3
+            s3_client.put_object(Bucket=target_bucket_arn, Key=s3_key_filtered, Body=filtered_data_json)
 
-                # Upload filtered data to S3
-                s3_client.put_object(Bucket=target_bucket_arn, Key=s3_key_filtered, Body=filtered_data_json)
+            # Get the count of records for the current order status
+            count = len(filtered_data)
 
-                # Get the count of records for the current order status
-                count = len(filtered_data)
-
-                # Return a message with the count of records
-                if count > 0:
-                    messages = f"Successfully uploaded {count} {status} orders to S3 Bucket".format("s3://" + "{status}" + "/" + s3_key_filtered)
-                    notification = sns_client.publish(Subject="SUCCESS - Daily Data Upload", TargetArn=sns_arn_filtered,
-                                                      Message=message, MessageStructure='text')
+            # Return a message with the count of records
+            if count > 0:
+                messages = f"Successfully uploaded {count} delivered orders to S3 Bucket".format("s3://" + "delivered" + "/" + s3_key_filtered)
+                notification = sns_client.publish(Subject="SUCCESS - Daily Data Upload", TargetArn=sns_arn_filtered,
+                                                  Message=message, MessageStructure='text')
 
         except Exception as err:
             print(err)
-            for status in order_statuses:
-                filtered_data = df[df['status'] == status]
-                message = f"Failed to upload {status} orders to S3 Bucket!!"
-                notification = sns_client.publish(Subject="FAILED - Daily Data Upload", TargetArn=sns_arn_filtered,
-                                              Message=message, MessageStructure='text')
-                
+            message = f"Failed to upload delivered orders to S3 Bucket!!"
+            notification = sns_client.publish(Subject="FAILED - Daily Data Upload", TargetArn=sns_arn_filtered,
+                                          Message=message, MessageStructure='text')
+
     except Exception as err:
         print(err)
